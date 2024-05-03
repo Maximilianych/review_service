@@ -1,0 +1,53 @@
+.header {
+    background-color: #b7b7b7;
+    font-weight: bold;
+    color: black;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+}
+
+.left {
+    background-color: lightgray;
+    align-items: center;
+    justify-content: center;
+}
+
+.middle {
+    background-color: white;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+}
+
+.right {
+    background-color: lightgray;
+    align-items: center;
+    justify-content: center;
+}
+
+.footer {
+    background-color: #b7b7b7;
+    text-align: center;
+    font-style: italic;
+    align-items: center;
+    justify-content: center;
+}
+
+.base>div {
+    padding-top: 20px;
+}
+
+.left {
+    height: 250px;
+}
+
+.left .form-check {
+    padding-left: 40px;
+}
+
+.email,
+.pass {
+    padding-bottom: 20px;
+}
