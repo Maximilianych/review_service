@@ -1,5 +1,5 @@
 use actix_files as fs;
-use actix_web::{dev::Server, get, post, web::{self, Redirect}, App, HttpResponse, HttpServer, Responder, Either};
+use actix_web::{dev::Server, get, post, web::{self, Redirect}, App, HttpResponse, HttpServer, Responder};
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use tera::{Context, Tera};
@@ -9,7 +9,7 @@ use tokio_postgres::{Client, NoTls};
 mod chain;
 use chain::Chain;
 
-use std::env;
+use std::{env, path::Path};
 
 struct WorkingContent<'a> {
     data: &'a str,
@@ -92,6 +92,7 @@ struct LoginForm {
 }
 
 //-------------CHAIN------------
+
 #[post("/login")]
 async fn login_post(data: web::Form<LoginForm>) -> impl Responder {
     println!("username: {}, password: {}", data.username, data.password);
@@ -113,19 +114,21 @@ async fn login_post(data: web::Form<LoginForm>) -> impl Responder {
                                          &[&data.username]).await.unwrap();
         let id = id.iter().next().unwrap(); //------------ITERATOR---------------
         println!("ID: {}", id.get::<usize, i32>(0));
-        Redirect::to(format!("/user/{}", id.get::<usize, i32>(0))).see_other()
+        HttpResponse::Ok().append_header(("HX-Redirect", format!("/user/{}", id.get::<usize, i32>(0)))).finish()
     }
     else {
-        Redirect::to("/login").see_other()
+        let context = tera::Context::new();
+        let content = TEMPLATES.render("login_fail.html", &context).unwrap();
+        HttpResponse::Ok().body(content)
     }   
 }
 //---------------CHAIN--------------
 
-#[get("/user")]
-async fn user() -> impl Responder {
+#[get("/user/{id}")]
+async fn user(id: web::Path<(u32,)>) -> impl Responder {
     HttpResponse::Ok()
         .content_type(WORKING_CONTENT.get_data())
-        .body("Страница пользователя")
+        .body(format!("ID: {}", id.into_inner().0))
 }
 
 #[get("/admin")]

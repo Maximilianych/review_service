@@ -50,10 +50,10 @@
 
         <div class="col-6 middle">
             <!-- 6/12 посередине "основной части" -->
-            <form action="/login" method="post">
+            <form hx-post="/login" hx-target="#username" >
                 <div class="row email">
                     <!-- 0й "Ряд" "основной части" -->
-                    <label for="username" class="col-4 col-form-label">Электронная почта/логин/номер телефона</label>
+                    <label for="username" class="col-4 col-form-label" id="username">Электронная почта/логин/номер телефона</label>
                     <div class="col-8">
                         <input type="text" class="form-control" name="username" placeholder="email@example.com" />
                     </div>
