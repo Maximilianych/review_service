@@ -1,10 +1,15 @@
 use actix_files as fs;
-use actix_web::{connect, dev::Server, get, post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{dev::Server, get, post, web::{self, Redirect}, App, HttpResponse, HttpServer, Responder, Either};
 use lazy_static::lazy_static;
-
+use serde::Deserialize;
 use tera::{Context, Tera};
 use tokio;
-use tokio_postgres::{Client, Connection, Error, NoTls};
+use tokio_postgres::{Client, NoTls};
+
+mod chain;
+use chain::Chain;
+
+use std::env;
 
 struct WorkingContent<'a> {
     data: &'a str,
@@ -18,19 +23,6 @@ static WORKING_CONTENT: WorkingContent = WorkingContent {
     data: "text/html; charset=utf-8",
 };
 
-async fn create_client() -> Client {
-    let (client, connection) =
-        tokio_postgres::connect("postgresql://rust:rust@localhost:5432/Service", NoTls)
-            .await
-            .unwrap();
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
-    client
-}
-
 lazy_static! {
     pub static ref TEMPLATES: Tera = {
         let source = "templates/**/*";
@@ -40,19 +32,18 @@ lazy_static! {
 }
 
 struct TableTransformer {}
-
 impl TableTransformer {
     async fn do_admin_table(client: &Client, context: &mut Context) {
         let mut table = String::from(
             "<table class='table table-bordered table-striped'>
-                                                <tr>
-                                                    <th width='7%'>Номер заказа</th>
-                                                    <th width='35%'>Название книги</th>
-                                                    <th width='20%'>Автор</th>
-                                                    <th width='20%'>Рецензер</th>
-                                                    <th width='10%'>Факультет</th>
-                                                    <th></th>
-                                                </tr>",
+            <tr>
+                <th width='7%'>Номер заказа</th>
+                <th width='35%'>Название книги</th>
+                <th width='20%'>Автор</th>
+                <th width='20%'>Рецензер</th>
+                <th width='10%'>Факультет</th>
+                <th></th>
+            </tr>",
         );
         for row in client.query("SELECT CAST(request_id as varchar(10)), book_name, person_name, reviewer_name, faculty_name FROM request
                                     INNER JOIN person
@@ -89,12 +80,46 @@ async fn launch() -> impl Responder {
 #[get("/login")]
 async fn login() -> impl Responder {
     let mut context = tera::Context::new();
-
     let page_content = TEMPLATES.render("login.html", &context).unwrap();
-
     HttpResponse::Ok()
         .body(page_content)
 }
+
+#[derive(Deserialize)]
+struct LoginForm {
+    username: String,
+    password: String
+}
+
+//-------------CHAIN------------
+#[post("/login")]
+async fn login_post(data: web::Form<LoginForm>) -> impl Responder {
+    println!("username: {}, password: {}", data.username, data.password);
+    let (client, connection) =
+        tokio_postgres::connect("postgresql://rust:rust@localhost:5432/Service", NoTls)
+            .await
+            .unwrap();
+    tokio::spawn(async move {
+        if let Err(e) = connection.await {
+            eprintln!("connection error: {}", e);
+        }
+    });
+
+    if Chain::check_user(&data.username, &data.password).await {
+        let id = client.query("SELECT person_id FROM person_data
+                                         WHERE person_mail = $1
+                                         OR person_login = $1
+                                         OR person_phone = $1", 
+                                         &[&data.username]).await.unwrap();
+        let id = id.iter().next().unwrap(); //------------ITERATOR---------------
+        println!("ID: {}", id.get::<usize, i32>(0));
+        Redirect::to(format!("/user/{}", id.get::<usize, i32>(0))).see_other()
+    }
+    else {
+        Redirect::to("/login").see_other()
+    }   
+}
+//---------------CHAIN--------------
 
 #[get("/user")]
 async fn user() -> impl Responder {
@@ -130,6 +155,7 @@ impl RunServer {
             App::new()
                 .service(launch)
                 .service(login)
+                .service(login_post)
                 .service(user)
                 .service(admin)
                 .service(fs::Files::new("/assets", "./assets").show_files_listing())
@@ -143,6 +169,8 @@ impl RunServer {
 #[actix_web::main]
 
 async fn main() -> std::io::Result<()> {
+    env::set_var("RUST_BACKTRACE", "1");
+
     RunServer::run().await?;
 
     Ok(())

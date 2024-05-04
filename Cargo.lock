@@ -1300,6 +1300,7 @@ dependencies = [
  "actix-web",
  "lazy_static",
  "postgres",
+ "serde",
  "tera",
  "tokio",
  "tokio-postgres",

@@ -50,31 +50,34 @@
 
         <div class="col-6 middle">
             <!-- 6/12 посередине "основной части" -->
-
-            <div class="row email">
+            <form action="/login" method="post">
+                <div class="row email">
+                    <!-- 0й "Ряд" "основной части" -->
+                    <label for="username" class="col-4 col-form-label">Электронная почта/логин/номер телефона</label>
+                    <div class="col-8">
+                        <input type="text" class="form-control" name="username" placeholder="email@example.com" />
+                    </div>
+                </div>
                 <!-- 0й "Ряд" "основной части" -->
-                <label for="label_email" class="col-4 col-form-label">Электронная почта/логин/номер телефона</label>
-                <div class="col-8">
-                    <input type="email" class="form-control" id="label_login" placeholder="email@example.com" />
-                </div>
-            </div>
-            <!-- 0й "Ряд" "основной части" -->
 
-            <div class="row pass">
+                <div class="row pass">
+                    <!-- 1й "Ряд" "основной части" -->
+                    <label for="password" class="col-4 col-form-label">Пароль</label>
+                    <div class="col-8">
+                        <input type="password" class="form-control" name="password" id="label_password"
+                            placeholder="Введите пароль..." />
+                    </div>
+                </div>
                 <!-- 1й "Ряд" "основной части" -->
-                <label for="label_password" class="col-4 col-form-label">Пароль</label>
-                <div class="col-8">
-                    <input type="password" class="form-control" id="label_password" placeholder="Введите пароль..." />
-                </div>
-            </div>
-            <!-- 1й "Ряд" "основной части" -->
 
-            <div class="row">
-                <!-- 2й "Ряд" "основной части" -->
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary" id="button_login">Войти по логин-паролю</button>
+                <div class="row">
+                    <!-- 2й "Ряд" "основной части" -->
+                    <div class="col-12">
+                        <button class="btn btn-primary" id="button_login">Войти по
+                            логин-паролю</button>
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
         <!-- 6/12 посередине "основной части" -->
 
