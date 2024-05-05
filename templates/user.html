@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Меню пользователя</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="/assets/user_style.css">
+</head>
+
+<body>
+    <div class="row new_book">
+        <div class="container col-6">
+            <div class="row">
+                <div class="text-center justify-content-lg-center row">
+                    <div class="page-header">
+                        <h2 mb-3>Создание заказа</h2>
+                    </div>
+
+                    <form hx-post="/new_order" id="form_new_book">
+                        <div class="form-control">
+                            <label class="form-label">Название книги</label><span class="error" id="err_book_name">
+                                *</span>
+                            <textarea class="form-control" id="text_book_name" style="height:15px;"></textarea>
+                        </div>
+
+                        <div class="form-select form-select-sm">
+                            <aria-label class=".form-select-sm example">Факультет</aria-label><span class="error"
+                                id="err_fac"> *</span>
+                            <select class="form-control" id="label_fac">
+                                <option value="1">ИСиТ</option>
+                                <option value="2">РТС</option>
+                                <option value="3">ИКСС</option>
+                                <option value="4">ФП</option>
+                            </select>
+                        </div>
+
+                        <div class="form-select form-select-sm">
+                            <label class="form-label">Рецензер</label><span class="error" id="err_rec"> *</span>
+                            <select class="form-control" id="label_rec">
+                                <option value="1">Иванов Иван Иванович</option>
+                                <option value="2">Егоров Егор Егорович</option>
+                                <option value="3">Мосин Матвей Матвеевич</option>
+                            </select>
+                        </div>
+
+                        <div class="form-control">
+                            <label for="file">Выберите файл с книгой для загрузки</label><span class="error"
+                                id="err_file"> *</span>
+                            <input class="form-control" type="file" id="file_book" />
+                        </div>
+
+                        <div class="row m-1">
+                            <input class="btn btn-success btn-lg" type="submit" id="btn_submit_order"
+                                value="Подтвердить" />
+                        </div>
+                        <div class="row m-1">
+                            <button class="btn btn-danger btn-lg" type="reset" id="btn_reset_order"
+                                href="index.html">Сбросить значения по умолчанию</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="table-cont col-6">
+            <h2 class="text-center">Список заказов</h2>
+
+            {{ table|safe }}
+        
+        </div>
+    </div>
+
+    <script src="src/create.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,20 @@
+* {
+    align-items: center;
+    justify-content: center;
+}
+
+table {
+    background-color: #ffffff;
+}
+
+.error {
+    color: #FF0000;
+}
+
+.new_book {
+    padding: 20px 0;
+}
+
+.table-cont {
+    align-self: start;
+}

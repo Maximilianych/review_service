@@ -1,5 +1,10 @@
 use actix_files as fs;
-use actix_web::{dev::Server, get, post, web::{self, Redirect}, App, HttpResponse, HttpServer, Responder};
+use actix_web::{
+    dev::Server,
+    get, post,
+    web,
+    App, HttpResponse, HttpServer, Responder,
+};
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use tera::{Context, Tera};
@@ -67,32 +72,61 @@ impl TableTransformer {
         table.push_str("</table>");
         context.insert("table", &table);
     }
+
+    async fn do_user_table(id: u32, client: &Client, context: &mut Context) {
+        let mut table = String::from(
+            "<table class='table table-bordered table-striped col-6'>
+            <tr>
+                <th width='50%'>Название книги</th>
+                <th width='30%'>Рецензер</th>
+                <th width='10%'>Факультет</th>
+                <th></th>
+            </tr>",
+        );
+        let id = id as i32;
+        for row in client.query("SELECT CAST(request_id as varchar(10)), book_name, reviewer_name, faculty_name FROM request
+                                                INNER JOIN reviewer
+                                                ON request.reviewer_id = reviewer.reviewer_id
+                                                INNER JOIN faculty
+                                                ON request.faculty_id = faculty.faculty_id
+                                                WHERE request.author_id = $1", &[&id]).await.unwrap() {
+            let tr = format!("<tr>
+                                        <td>{}</td>
+                                        <td>{}</td>
+                                        <td>{}</td>
+                                        <td>
+                                            <a class='btn-outline-dark btn'><i class='bi-trash3-fill'></i></a>
+                                        </td>
+                                    </tr>", row.get::<usize, &str>(1), row.get::<usize, &str>(2), row.get::<usize, &str>(3));
+            table.push_str(&tr)
+        }
+        table.push_str("</table>");
+        context.insert("table", &table);
+    }
 }
 
 //Service Pages
 #[get("/")]
 async fn launch() -> impl Responder {
-    HttpResponse::Ok()
-        .content_type(WORKING_CONTENT.get_data())
-        .body("Главная страница")
+    let context = tera::Context::new();
+    let page_content = TEMPLATES.render("index.html", &context).unwrap();
+    HttpResponse::Ok().body(page_content)
 }
 
 #[get("/login")]
 async fn login() -> impl Responder {
-    let mut context = tera::Context::new();
+    let context = tera::Context::new();
     let page_content = TEMPLATES.render("login.html", &context).unwrap();
-    HttpResponse::Ok()
-        .body(page_content)
+    HttpResponse::Ok().append_header(("HX-redirect", "/login")).body(page_content)
 }
 
 #[derive(Deserialize)]
 struct LoginForm {
     username: String,
-    password: String
+    password: String,
 }
 
 //-------------CHAIN------------
-
 #[post("/login")]
 async fn login_post(data: web::Form<LoginForm>) -> impl Responder {
     println!("username: {}, password: {}", data.username, data.password);
@@ -107,28 +141,46 @@ async fn login_post(data: web::Form<LoginForm>) -> impl Responder {
     });
 
     if Chain::check_user(&data.username, &data.password).await {
-        let id = client.query("SELECT person_id FROM person_data
+        let id = client.query(
+                "SELECT person_id FROM person_data
                                          WHERE person_mail = $1
                                          OR person_login = $1
-                                         OR person_phone = $1", 
-                                         &[&data.username]).await.unwrap();
+                                         OR person_phone = $1",
+                &[&data.username],
+            )
+            .await
+            .unwrap();
         let id = id.iter().next().unwrap(); //------------ITERATOR---------------
         println!("ID: {}", id.get::<usize, i32>(0));
-        HttpResponse::Ok().append_header(("HX-Redirect", format!("/user/{}", id.get::<usize, i32>(0)))).finish()
-    }
-    else {
+        HttpResponse::Ok()
+            .append_header(("HX-Redirect", format!("/user/{}", id.get::<usize, i32>(0))))
+            .finish()
+    } else {
         let context = tera::Context::new();
         let content = TEMPLATES.render("login_fail.html", &context).unwrap();
         HttpResponse::Ok().body(content)
-    }   
+    }
 }
 //---------------CHAIN--------------
 
 #[get("/user/{id}")]
 async fn user(id: web::Path<(u32,)>) -> impl Responder {
-    HttpResponse::Ok()
-        .content_type(WORKING_CONTENT.get_data())
-        .body(format!("ID: {}", id.into_inner().0))
+    let (client, connection) =
+        tokio_postgres::connect("postgresql://rust:rust@localhost:5432/Service", NoTls)
+            .await
+            .unwrap();
+    tokio::spawn(async move {
+        if let Err(e) = connection.await {
+            eprintln!("connection error: {}", e);
+        }
+    });
+
+    let mut context = tera::Context::new();
+
+    TableTransformer::do_user_table(id.into_inner().0, &client, &mut context).await;
+
+    let page_content = TEMPLATES.render("user.html", &context).unwrap();
+    HttpResponse::Ok().body(page_content)
 }
 
 #[get("/admin")]
@@ -148,7 +200,7 @@ async fn admin() -> impl Responder {
     TableTransformer::do_admin_table(&client, &mut context).await;
 
     let page_content = TEMPLATES.render("admin.html", &context).unwrap();
-    HttpResponse::Ok().body(page_content)
+    HttpResponse::Ok().append_header(("HX-redirect", "/admin")).body(page_content)
 }
 
 struct RunServer {}
@@ -172,7 +224,7 @@ impl RunServer {
 #[actix_web::main]
 
 async fn main() -> std::io::Result<()> {
-    env::set_var("RUST_BACKTRACE", "1");
+    env::set_var("RUST_BACKTRACE", "0");
 
     RunServer::run().await?;
 
