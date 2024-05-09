@@ -26,7 +26,9 @@ lazy_static! {
 async fn start() -> impl Responder {
     let context = tera::Context::new();
     let page_content = TEMPLATES.render("index.html", &context).unwrap();
-    HttpResponse::Ok().body(page_content)
+    HttpResponse::Ok()
+        .insert_header(("HX-redirect", "/"))
+        .body(page_content)
 }
 
 #[get("/login")]
@@ -96,13 +98,21 @@ async fn user(id: web::Path<(u32,)>) -> impl Responder {
 
     let mut context = tera::Context::new();
     context.insert("user_id", &id);
-    DoThings::do_user_table(id, &client, &mut context).await;
-
+    let table = DoThings::do_user_table(id, &client).await;
+    context.insert("table", &table);
     let page_content = TEMPLATES.render("user.html", &context).unwrap();
     HttpResponse::Ok().body(page_content)
 }
 
+#[post("/clear_order_form")]
+async fn clear_order_form(data: web::Form<NewOrderForm>) -> impl Responder {
+    let mut context = tera::Context::new();
+    context.insert("user_id", &data.into_inner().user_id);
+    let form = TEMPLATES.render("clear_order_form.html", &context).unwrap();
+    HttpResponse::Ok().body(form)
+}
 
+#[derive(Debug)]
 #[derive(Deserialize)]
 struct NewOrderForm {
     user_id: i32,
@@ -113,7 +123,6 @@ struct NewOrderForm {
 
 #[post("/changing_facult")]
 async fn changing_facult(order_form: web::Form<NewOrderForm>) -> impl Responder {
-    println!("Туть");
     let (client, connection) =
     tokio_postgres::connect("postgresql://rust:rust@localhost:5432/Service", NoTls)
         .await
@@ -146,12 +155,15 @@ async fn new_order(order_form: web::Form<NewOrderForm>) -> impl Responder {
         }
     });
 
+    println!("Новый заказ {:?}", order_form);
     let order_form = order_form.into_inner();
+
     if DoThings::create_order(&order_form, &client).await {
-        return HttpResponse::Ok();
+        let table = DoThings::do_user_table(order_form.user_id as u32, &client).await;
+        return HttpResponse::Ok().body(table);
     }
     else {
-        return HttpResponse::BadRequest();
+        return HttpResponse::Ok().body("Что-то не так");
     }
 }
 
@@ -211,6 +223,7 @@ impl RunServer {
                 .service(login_post)
                 .service(user)
                 .service(changing_facult)
+                .service(clear_order_form)
                 .service(admin)
                 .service(new_order)
                 .service(delete_order)

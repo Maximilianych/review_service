@@ -40,7 +40,7 @@ impl DoThings {
         context.insert("table", &table);
     }
 
-    pub async fn do_user_table(id: u32, client: &Client, context: &mut Context) {
+    pub async fn do_user_table(id: u32, client: &Client) -> String {
         let mut table = String::from(
             "<table class='table table-bordered table-striped col-6'>
             <tr>
@@ -62,13 +62,13 @@ impl DoThings {
                                         <td>{}</td>
                                         <td>{}</td>
                                         <td>
-                                            <a class='btn-outline-dark btn'><i class='bi-trash3-fill'></i></a>
+                                            <a hx-delete='/delete_order/{}' hx-target='closest tr' hx-swap='outerHTML' class='btn-outline-dark btn'><i class='bi-trash3-fill'></i></a>
                                         </td>
-                                    </tr>", row.get::<usize, &str>(1), row.get::<usize, &str>(2), row.get::<usize, &str>(3));
+                                    </tr>", row.get::<usize, &str>(1), row.get::<usize, &str>(2), row.get::<usize, &str>(3), row.get::<usize, &str>(0));
             table.push_str(&tr)
         }
         table.push_str("</table>");
-        context.insert("table", &table);
+        return table;
     }
 
     pub async fn reviewers_from_faculty(facult: i32, client: &Client, context: &mut Context) {

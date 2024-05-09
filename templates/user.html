@@ -20,12 +20,12 @@
                         <h2 mb-3>Создание заказа</h2>
                     </div>
 
-                    <form hx-post="/new_order" id="form_new_book">
+                    <form id="form_new_book">
                         <input type="hidden" name="user_id" id="user_id" value={{ user_id }}>
                         <div class="form-control">
                             <label class="form-label">Название книги</label><span class="error" id="err_book_name">
                                 *</span>
-                            <textarea name="name" class="form-control" id="text_book_name" style="height:15px;" required minlength="1"></textarea>
+                            <textarea name="book_name" class="form-control" id="text_book_name" style="height:15px;" required minlength="1"></textarea>
                         </div>
 
                         <div class="form-select form-select-sm">
@@ -53,13 +53,14 @@
                         </div>
 
                         <div class="row m-1">
-                            <input class="btn btn-success btn-lg" type="submit" id="btn_submit_order" value="Подтвердить" />
+                            <input hx-post="/new_order" hx-target="table" class="btn btn-success btn-lg" type="submit" id="btn_submit_order" value="Подтвердить" />
                         </div>
 
                         <div class="row m-1">
-                            <button class="btn btn-danger btn-lg" type="reset" id="btn_reset_order" href="index.html">Сбросить значения по умолчанию</button>
+                            <button hx-post="/clear_order_form" hx-target="form" class="btn btn-danger btn-lg" type="reset" id="btn_reset_order" href="index.html">Сбросить значения по умолчанию</button>
                         </div>
                     </form>
+
                 </div>
             </div>
         </div>
@@ -71,7 +72,6 @@
         </div>
     </div>
 
-    <script src="src/create.js"></script>
 </body>
 
 </html>

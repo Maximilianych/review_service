@@ -22,7 +22,6 @@ pub enum User {
 pub struct ChainEmail {}
 impl ChainEmail {
     pub async fn check_mail(username: &str) -> Option<User> {
-        println!("В check_mail");
         let (client, connection) =
             tokio_postgres::connect("postgresql://rust:rust@localhost:5432/Service", NoTls)
                 .await
