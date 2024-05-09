@@ -29,9 +29,9 @@ impl DoThings {
                                         <td>{}</td>
                                         <td>{}</td>
                                         <td>
-                                            <a class='btn-outline-dark btn'><i class='bi-trash3-fill'></i></a>
+                                            <a hx-delete='/delete_order/{}' hx-target='closest tr' hx-swap='outerHTML' class='btn-outline-dark btn'><i class='bi-trash3-fill'></i></a>
                                         </td>
-                                    </tr>", row.get::<usize, &str>(0), row.get::<usize, &str>(1), row.get::<usize, &str>(2), row.get::<usize, &str>(3), row.get::<usize, &str>(4));
+                                    </tr>", row.get::<usize, &str>(0), row.get::<usize, &str>(1), row.get::<usize, &str>(2), row.get::<usize, &str>(3), row.get::<usize, &str>(4), row.get::<usize, &str>(0));
             table.push_str(&tr)
         }
         table.push_str("</table>");
@@ -48,13 +48,13 @@ impl DoThings {
                 <th></th>
             </tr>",
         );
-        let id = id as i32;
+        
         for row in client.query("SELECT CAST(request_id as varchar(10)), book_name, reviewer_name, faculty_name FROM request
                                                 INNER JOIN reviewer
                                                 ON request.reviewer_id = reviewer.reviewer_id
                                                 INNER JOIN faculty
                                                 ON request.faculty_id = faculty.faculty_id
-                                                WHERE request.author_id = $1", &[&id]).await.unwrap() {
+                                                WHERE request.author_id = $1", &[&(id as i32)]).await.unwrap() {
             let tr = format!("<tr>
                                         <td>{}</td>
                                         <td>{}</td>
@@ -71,12 +71,35 @@ impl DoThings {
 
     pub async fn reviewers_from_faculty(facult: i32, client: &Client, context: &mut Context) {
         let mut option: String = String::default();
-        for row in client.query("SELECT reviewer_id, reviewer_name FROM reviewer
-                                                WHERE reviewer_faculty_id = $1", &[&facult])
-                                                .await.unwrap() {
-            option.push_str(&format!("<option value='{}'>{}</option>\n", row.get::<usize, i32>(0), row.get::<usize, &str>(1)));
+        for row in client.query(  "SELECT reviewer_id, reviewer_name FROM reviewer WHERE reviewer_faculty_id = $1",&[&facult])
+            .await
+            .unwrap()
+        {
+            option.push_str(&format!(
+                "<option value='{}'>{}</option>\n",
+                row.get::<usize, i32>(0),
+                row.get::<usize, &str>(1)
+            ));
             println!("Option: {}", option);
         }
         context.insert("form_reviewer", &option);
+    }
+
+
+
+    pub async fn delete_order(id: u32, client: &Client) -> bool {
+        match client
+            .execute("DELETE FROM request WHERE request_id = $1", &[&(id as i32)])
+            .await
+        {
+            Ok(_) => {
+                println!("Удаление удалило заказ с номером {}", id);
+                return true;
+            }
+            Err(e) => {
+                println!("Удаление ничего не удалило, где-то ошибочка: {}", e);
+                return false;
+            }
+        }
     }
 }

@@ -1,5 +1,5 @@
 use actix_files as fs;
-use actix_web::{dev::Server, get, post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{dev::Server, get, post, delete, put, web, App, HttpResponse, HttpServer, Responder};
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use tera::Tera;
@@ -23,7 +23,7 @@ lazy_static! {
 
 //Service Pages
 #[get("/")]
-async fn launch() -> impl Responder {
+async fn start() -> impl Responder {
     let context = tera::Context::new();
     let page_content = TEMPLATES.render("index.html", &context).unwrap();
     HttpResponse::Ok().body(page_content)
@@ -126,7 +126,33 @@ async fn changing_facult(order_form: web::Form<NewOrderForm>) -> impl Responder 
 
     let reviewer_content = TEMPLATES.render("form_reviewer.html", &context).unwrap();
     println!("reviewer_content: {}", reviewer_content);
+
     HttpResponse::Ok().body(reviewer_content)
+}
+
+
+
+#[delete("/delete_order/{id}")]
+async fn delete_order(id: web::Path<(u32,)>) -> impl Responder {
+    let (client, connection) =
+        tokio_postgres::connect("postgresql://rust:rust@localhost:5432/Service", NoTls)
+            .await
+            .unwrap();
+    tokio::spawn(async move {
+        if let Err(e) = connection.await {
+            eprintln!("connection error: {}", e);
+        }
+    });
+
+    let id = id.into_inner().0;
+
+    if DoThings::delete_order(id, &client).await {
+        HttpResponse::Ok()
+    }
+    else {
+        HttpResponse::BadRequest()
+    }
+
 }
 
 #[get("/admin")]
@@ -151,17 +177,20 @@ async fn admin() -> impl Responder {
         .body(page_content)
 }
 
+
 struct RunServer {}
 impl RunServer {
     fn run() -> Server {
         HttpServer::new(|| {
             App::new()
-                .service(launch)
+                .service(start)
                 .service(login)
                 .service(login_post)
                 .service(user)
                 .service(changing_facult)
                 .service(admin)
+
+                .service(delete_order)
                 .service(fs::Files::new("/assets", "./assets").show_files_listing())
         })
         .bind(("127.0.0.1", 8080))
