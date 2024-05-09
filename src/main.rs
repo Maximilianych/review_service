@@ -1,5 +1,5 @@
 use actix_files as fs;
-use actix_web::{dev::Server, get, post, delete, put, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{dev::Server, get, post, delete, web, App, HttpResponse, HttpServer, Responder};
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use tera::Tera;
@@ -83,6 +83,7 @@ async fn login_post(data: web::Form<LoginForm>) -> impl Responder {
 
 #[get("/user/{id}")]
 async fn user(id: web::Path<(u32,)>) -> impl Responder {
+    let id = id.into_inner().0;
     let (client, connection) =
         tokio_postgres::connect("postgresql://rust:rust@localhost:5432/Service", NoTls)
             .await
@@ -94,43 +95,65 @@ async fn user(id: web::Path<(u32,)>) -> impl Responder {
     });
 
     let mut context = tera::Context::new();
-
-    DoThings::do_user_table(id.into_inner().0, &client, &mut context).await;
+    context.insert("user_id", &id);
+    DoThings::do_user_table(id, &client, &mut context).await;
 
     let page_content = TEMPLATES.render("user.html", &context).unwrap();
     HttpResponse::Ok().body(page_content)
 }
 
+
 #[derive(Deserialize)]
 struct NewOrderForm {
-    name: String,
+    user_id: i32,
+    book_name: String,
     facult: i32,
     reviewer: i32,
 }
 
 #[post("/changing_facult")]
 async fn changing_facult(order_form: web::Form<NewOrderForm>) -> impl Responder {
-    println!("Факультет моменян на {}", order_form.facult);
+    println!("Туть");
     let (client, connection) =
-        tokio_postgres::connect("postgresql://rust:rust@localhost:5432/Service", NoTls)
-            .await
-            .unwrap();
+    tokio_postgres::connect("postgresql://rust:rust@localhost:5432/Service", NoTls)
+        .await
+        .unwrap();
     tokio::spawn(async move {
         if let Err(e) = connection.await {
             eprintln!("connection error: {}", e);
         }
     });
+
+    println!("Факультет моменян на {}", order_form.facult);
     let mut context = tera::Context::new();
 
     DoThings::reviewers_from_faculty(order_form.facult, &client, &mut context).await;
 
     let reviewer_content = TEMPLATES.render("form_reviewer.html", &context).unwrap();
-    println!("reviewer_content: {}", reviewer_content);
 
     HttpResponse::Ok().body(reviewer_content)
 }
 
+#[post("/new_order")]
+async fn new_order(order_form: web::Form<NewOrderForm>) -> impl Responder {
+    let (client, connection) =
+    tokio_postgres::connect("postgresql://rust:rust@localhost:5432/Service", NoTls)
+        .await
+        .unwrap();
+    tokio::spawn(async move {
+        if let Err(e) = connection.await {
+            eprintln!("connection error: {}", e);
+        }
+    });
 
+    let order_form = order_form.into_inner();
+    if DoThings::create_order(&order_form, &client).await {
+        return HttpResponse::Ok();
+    }
+    else {
+        return HttpResponse::BadRequest();
+    }
+}
 
 #[delete("/delete_order/{id}")]
 async fn delete_order(id: web::Path<(u32,)>) -> impl Responder {
@@ -189,7 +212,7 @@ impl RunServer {
                 .service(user)
                 .service(changing_facult)
                 .service(admin)
-
+                .service(new_order)
                 .service(delete_order)
                 .service(fs::Files::new("/assets", "./assets").show_files_listing())
         })

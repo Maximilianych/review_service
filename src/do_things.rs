@@ -1,6 +1,8 @@
 use tera::Context;
 use tokio_postgres::Client;
 
+use crate::NewOrderForm;
+
 pub struct DoThings {}
 impl DoThings {
     pub async fn do_admin_table(client: &Client, context: &mut Context) {
@@ -71,7 +73,7 @@ impl DoThings {
 
     pub async fn reviewers_from_faculty(facult: i32, client: &Client, context: &mut Context) {
         let mut option: String = String::default();
-        for row in client.query(  "SELECT reviewer_id, reviewer_name FROM reviewer WHERE reviewer_faculty_id = $1",&[&facult])
+        for row in client.query("SELECT reviewer_id, reviewer_name FROM reviewer WHERE reviewer_faculty_id = $1",&[&facult])
             .await
             .unwrap()
         {
@@ -85,7 +87,22 @@ impl DoThings {
         context.insert("form_reviewer", &option);
     }
 
+    pub async fn create_order(order_form: &NewOrderForm, client: &Client) -> bool {
+        match client
+            .execute("INSERT INTO request(book_name, author_id, reviewer_id, faculty_id)
+                                VALUES ($1, $2, $3, $4);", &[&order_form.book_name, &order_form.user_id, &order_form.reviewer, &order_form.facult])
+            .await
+        {
+            Ok(_) => {
 
+                return true;
+            }
+            Err(e) => {
+                println!("Удаление ничего не удалило, где-то ошибочка: {}", e);
+                return false;
+            }
+        }
+    }
 
     pub async fn delete_order(id: u32, client: &Client) -> bool {
         match client
