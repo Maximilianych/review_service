@@ -1,24 +1,22 @@
-use std::result;
-
 use tokio_postgres::NoTls;
 
 pub struct Chain {}
 impl Chain {
-    pub async fn check_user(username: &str, password: &str) -> bool {
+    pub async fn check_user(username: &String, password: &String) -> bool {
         let user = ChainEmail::check_mail(username).await;
         match user {
-            Some(User::email) => ChainEmail::check_password(username, password).await,
-            Some(User::login) => ChainLogin::check_password(username, password).await,
-            Some(User::phone) => ChainPhone::check_password(username, password).await,
+            Some(User::Email) => ChainEmail::check_password(username, password).await,
+            Some(User::Login) => ChainLogin::check_password(username, password).await,
+            Some(User::Phone) => ChainPhone::check_password(username, password).await,
             None => {println!("Увы, но что-то не так"); false}
         }
     }
 }
 
 pub enum User {
-    email,
-    login,
-    phone,
+    Email,
+    Login,
+    Phone,
 }
 
 pub struct ChainEmail {}
@@ -43,7 +41,7 @@ impl ChainEmail {
             .await.unwrap();
         let mut result = result.iter(); //-----------ITERATOR------------
         match result.next() {
-            Some(_) => {println!("Это почта, можно больше не продолжать, {}", &username); Some(User::email)},
+            Some(_) => {println!("Это почта, можно больше не продолжать, {}", &username); Some(User::Email)},
             None => {println!("Это не почта, продолжаем"); ChainLogin::check_login(username).await},
         }
     }
@@ -94,7 +92,7 @@ impl ChainLogin {
             .await.unwrap();
         let mut result = result.iter();
         match result.next() {
-            Some(_) => {println!("Это логин, можно больше не продолжать"); Some(User::login)},
+            Some(_) => {println!("Это логин, можно больше не продолжать"); Some(User::Login)},
             None => {println!("Это не логин, продолжаем"); ChainPhone::check_phone(username).await},
         }
     }
@@ -146,7 +144,7 @@ impl ChainPhone {
             .await.unwrap();
         let mut result = result.iter();
         match result.next() {
-            Some(_) => {println!("Это телефон, можно больше не продолжать"); Some(User::phone)},
+            Some(_) => {println!("Это телефон, можно больше не продолжать"); Some(User::Phone)},
             None => {println!("Это не телефон, продолжать некуда"); None}
         }
     }
