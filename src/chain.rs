@@ -1,5 +1,7 @@
 use tokio_postgres::NoTls;
 
+//----------Chain of Responsibility-------------
+
 pub struct Chain {}
 impl Chain {
     pub async fn check_user(username: &String, password: &String) -> bool {
@@ -62,10 +64,11 @@ impl ChainEmail {
                 AND person_password = $2",
                 &[&username, &password],
             )
-            .await;
-        match result {
-            Ok(_) => {println!("Пароль что-надо, кайфуем"); true},
-            Err(_) => false
+            .await.unwrap();
+        let mut result = result.iter();
+        match result.next() {
+            Some(_) => {println!("Пароль что-надо, кайфуем"); true},
+            None => false
         }
     }
 }
@@ -113,10 +116,11 @@ impl ChainLogin {
                 AND person_password = $2",
                 &[&username, &password],
             )
-            .await;
-        match result {
-            Ok(_) => {println!("Пароль что-надо, кайфуем"); true},
-            Err(_) => false
+            .await.unwrap();
+        let mut result = result.iter();
+        match result.next() {
+            Some(_) => {println!("Пароль что-надо, кайфуем"); true},
+            None => false
         }
     }
 }
@@ -165,10 +169,11 @@ impl ChainPhone {
                 AND person_password = $2",
                 &[&username, &password],
             )
-            .await;
-        match result {
-            Ok(_) => {println!("Пароль что-надо, кайфуем"); true},
-            Err(_) => false
+            .await.unwrap();
+        let mut result = result.iter();
+        match result.next() {
+            Some(_) => {println!("Пароль что-надо, кайфуем"); true},
+            None => false
         }
     }
 }

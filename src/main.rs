@@ -11,8 +11,7 @@ mod do_things;
 use chain::Chain;
 use do_things::DoThings;
 
-use std::env;
-
+//-------------Singleton--------------
 lazy_static! {
     pub static ref TEMPLATES: Tera = {
         let source = "templates/**/*";
@@ -22,7 +21,7 @@ lazy_static! {
 }
 
 //Service Pages
-#[get("/")]
+#[get("/")] //------------Decorator----------------
 async fn start() -> impl Responder {
     let context = tera::Context::new();
     let page_content = TEMPLATES.render("index.html", &context).unwrap();
@@ -46,7 +45,6 @@ struct LoginForm {
     password: String,
 }
 
-//-------------CHAIN------------
 #[post("/login")]
 async fn login_post(data: web::Form<LoginForm>) -> impl Responder {
     let (client, connection) =
@@ -59,7 +57,7 @@ async fn login_post(data: web::Form<LoginForm>) -> impl Responder {
         }
     });
 
-    if Chain::check_user(&data.username, &data.password).await {
+    if Chain::check_user(&data.username, &data.password).await { //----------Chain of Responsibility--------------
         let id = client
             .query(
                 "SELECT person_id FROM person_data
@@ -70,7 +68,7 @@ async fn login_post(data: web::Form<LoginForm>) -> impl Responder {
             )
             .await
             .unwrap();
-        let id = id.iter().next().unwrap(); //------------ITERATOR---------------
+        let id = id.iter().next().unwrap();
         println!("ID: {}", id.get::<usize, i32>(0));
         HttpResponse::Ok()
             .append_header(("HX-Redirect", format!("/user/{}", id.get::<usize, i32>(0))))
@@ -81,7 +79,6 @@ async fn login_post(data: web::Form<LoginForm>) -> impl Responder {
         HttpResponse::Ok().body(content)
     }
 }
-//---------------CHAIN--------------
 
 #[get("/user/{id}")]
 async fn user(id: web::Path<(u32,)>) -> impl Responder {
@@ -102,14 +99,6 @@ async fn user(id: web::Path<(u32,)>) -> impl Responder {
     context.insert("table", &table);
     let page_content = TEMPLATES.render("user.html", &context).unwrap();
     HttpResponse::Ok().body(page_content)
-}
-
-#[post("/clear_order_form")]
-async fn clear_order_form(data: web::Form<NewOrderForm>) -> impl Responder {
-    let mut context = tera::Context::new();
-    context.insert("user_id", &data.into_inner().user_id);
-    let form = TEMPLATES.render("clear_order_form.html", &context).unwrap();
-    HttpResponse::Ok().body(form)
 }
 
 #[derive(Debug)]
@@ -143,8 +132,8 @@ async fn changing_facult(order_form: web::Form<NewOrderForm>) -> impl Responder 
     HttpResponse::Ok().body(reviewer_content)
 }
 
-#[post("/new_order")]
-async fn new_order(order_form: web::Form<NewOrderForm>) -> impl Responder {
+#[post("/new_order_user")]
+async fn new_order_user(order_form: web::Form<NewOrderForm>) -> impl Responder {
     let (client, connection) =
     tokio_postgres::connect("postgresql://rust:rust@localhost:5432/Service", NoTls)
         .await
@@ -160,6 +149,32 @@ async fn new_order(order_form: web::Form<NewOrderForm>) -> impl Responder {
 
     if DoThings::create_order(&order_form, &client).await {
         let table = DoThings::do_user_table(order_form.user_id as u32, &client).await;
+        return HttpResponse::Ok().body(table);
+    }
+    else {
+        return HttpResponse::Ok().body("Что-то не так");
+    }
+}
+
+#[post("/new_order_admin")]
+async fn new_order_admin(order_form: web::Form<NewOrderForm>) -> impl Responder {
+    let (client, connection) =
+    tokio_postgres::connect("postgresql://rust:rust@localhost:5432/Service", NoTls)
+        .await
+        .unwrap();
+    tokio::spawn(async move {
+        if let Err(e) = connection.await {
+            eprintln!("connection error: {}", e);
+        }
+    });
+
+    println!("Новый заказ {:?}", order_form);
+    let order_form = order_form.into_inner();
+
+    if DoThings::create_order(&order_form, &client).await {
+        let mut context = tera::Context::new();
+        DoThings::do_admin_table(&client, &mut context).await;
+        let table = TEMPLATES.render("admin_table.html", &context).unwrap();
         return HttpResponse::Ok().body(table);
     }
     else {
@@ -223,9 +238,9 @@ impl RunServer {
                 .service(login_post)
                 .service(user)
                 .service(changing_facult)
-                .service(clear_order_form)
                 .service(admin)
-                .service(new_order)
+                .service(new_order_user)
+                .service(new_order_admin)
                 .service(delete_order)
                 .service(fs::Files::new("/assets", "./assets").show_files_listing())
         })

@@ -53,11 +53,11 @@
                         </div>
 
                         <div class="row m-1">
-                            <input hx-post="/new_order" hx-target="table" class="btn btn-success btn-lg" type="submit" id="btn_submit_order" value="Подтвердить" />
+                            <input hx-post="/new_order_user" hx-target="table" class="btn btn-success btn-lg" type="submit" id="btn_submit_order" value="Подтвердить" />
                         </div>
 
                         <div class="row m-1">
-                            <button hx-post="/clear_order_form" hx-target="form" class="btn btn-danger btn-lg" type="reset" id="btn_reset_order" href="index.html">Сбросить значения по умолчанию</button>
+                            <button type='reset' name='reset' class="btn btn-danger btn-lg" id="btn_reset_order">Сбросить значения по умолчанию</button>
                         </div>
                     </form>
 

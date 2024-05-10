@@ -18,12 +18,14 @@ impl DoThings {
             </tr>",
         );
         for row in client.query("SELECT CAST(request_id as varchar(10)), book_name, person_name, reviewer_name, faculty_name FROM request
-                                    INNER JOIN person
-                                    ON request.author_id = person.person_id
-                                    INNER JOIN reviewer
-                                    ON request.reviewer_id = reviewer.reviewer_id
-                                    INNER JOIN faculty
-                                    ON request.faculty_id = faculty.faculty_id", &[]).await.unwrap() {
+                                                INNER JOIN person
+                                                ON request.author_id = person.person_id
+                                                INNER JOIN reviewer
+                                                ON request.reviewer_id = reviewer.reviewer_id
+                                                INNER JOIN faculty
+                                                ON request.faculty_id = faculty.faculty_id", &[])
+                                                .await
+                                                .unwrap() {
             let tr = format!("<tr>
                                         <td>{}</td>
                                         <td>{}</td>
@@ -50,13 +52,15 @@ impl DoThings {
                 <th></th>
             </tr>",
         );
-        
+
         for row in client.query("SELECT CAST(request_id as varchar(10)), book_name, reviewer_name, faculty_name FROM request
                                                 INNER JOIN reviewer
                                                 ON request.reviewer_id = reviewer.reviewer_id
                                                 INNER JOIN faculty
                                                 ON request.faculty_id = faculty.faculty_id
-                                                WHERE request.author_id = $1", &[&(id as i32)]).await.unwrap() {
+                                                WHERE request.author_id = $1", &[&(id as i32)])
+                                                .await
+                                                .unwrap() {
             let tr = format!("<tr>
                                         <td>{}</td>
                                         <td>{}</td>
@@ -73,7 +77,11 @@ impl DoThings {
 
     pub async fn reviewers_from_faculty(facult: i32, client: &Client, context: &mut Context) {
         let mut option: String = String::default();
-        for row in client.query("SELECT reviewer_id, reviewer_name FROM reviewer WHERE reviewer_faculty_id = $1",&[&facult])
+        for row in client
+            .query(
+                "SELECT reviewer_id, reviewer_name FROM reviewer WHERE reviewer_faculty_id = $1",
+                &[&facult],
+            )
             .await
             .unwrap()
         {
@@ -89,12 +97,19 @@ impl DoThings {
 
     pub async fn create_order(order_form: &NewOrderForm, client: &Client) -> bool {
         match client
-            .execute("INSERT INTO request(book_name, author_id, reviewer_id, faculty_id)
-                                VALUES ($1, $2, $3, $4);", &[&order_form.book_name, &order_form.user_id, &order_form.reviewer, &order_form.facult])
+            .execute(
+                "INSERT INTO request(book_name, author_id, reviewer_id, faculty_id)
+                                VALUES ($1, $2, $3, $4);",
+                &[
+                    &order_form.book_name,
+                    &order_form.user_id,
+                    &order_form.reviewer,
+                    &order_form.facult,
+                ],
+            )
             .await
         {
             Ok(_) => {
-
                 return true;
             }
             Err(e) => {

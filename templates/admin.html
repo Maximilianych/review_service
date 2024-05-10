@@ -14,13 +14,68 @@
 <body>
 
     <div class="page-header">
-        <h1>Здравствуйте, Administrator. Ниже представлен перечень заказов на рецензирование книг, доступных для
-            редактирования!</h1>
+        <h1>Здравствуйте, Administrator. Ниже представлен перечень заказов на рецензирование книг, доступных для редактирования!</h1>
     </div>
     <p>
         <button hx-get="/" class="btn btn-danger">Выйти из аккаунта</button>
-        <button class="btn btn-dark">Добавить заказ</button>
+        <button class="btn btn-dark" onclick="window.admin_form.showModal()">Добавить заказ</button>
+        <dialog id="admin_form">
+            <form id="form_new_book">
+                <div class="form-control">
+                    <label class="form-label">Название книги</label><span class="error" id="err_book_name">
+                        *</span>
+                    <textarea name="book_name" class="form-control" id="text_book_name" style="height:15px;" required minlength="1"></textarea>
+                </div>
+                <div class="form-select form-select-sm">
+                    <label class="form-label">Автор</label><span class="error" id="err_fac"> *</span>
+                    <select name="user_id" class="form-control">
+                        <option value="3">Валеров Валерий Валеривич</option>
+                        <option value="4">Баранов Борис Борисович</option>
+                        <option value="5">Коровин Кирилл Кириллович</option>
+                        <option value="6">Быков Богдан Богданович</option>
+                        <option value="7">Кузьмин Кузьма Кузьмич</option>
+                        <option value="100">Тестов Тест Тестович</option>
+                    </select>
+                </div>
+                <div class="form-select form-select-sm">
+                    <label class="form-label">Факультет</label><span class="error" id="err_fac"> *</span>
+                    <select hx-post="/changing_facult" hx-target=".reviewer" name="facult" class="form-control">
+                        <option value="1">ИСиТ</option>
+                        <option value="2">РТС</option>
+                        <option value="3">ИКСС</option>
+                        <option value="4">ФП</option>
+                    </select>
+                </div>
 
+                <div class="form-select form-select-sm">
+                    <label class="form-label">Рецензер</label><span class="error" id="err_rec"> *</span>
+                    <select name="reviewer" class="form-control reviewer" id="label_rec">
+                        <option value="1">Иванов Иван Иванович</option>
+                        <option value="2">Егоров Егор Егорович</option>
+                        <option value="3">Мосин Матвей Матвеевич</option>
+                    </select>
+                </div>
+
+                <div class="form-control">
+                    <label>Выберите файл с книгой для загрузки</label><span class="error" id="err_file"> *</span>
+                    <input class="form-control" type="file" id="file_book" />
+                </div>
+
+                <div class="row m-1">
+                    <input hx-post="/new_order_admin" hx-target="table" class="btn btn-success btn-lg" type="submit" id="btn_submit_order"
+                        value="Подтвердить" />
+                </div>
+
+                <div class="row m-1">
+                    <button type='reset' name='reset' class="btn btn-danger btn-lg" id="btn_reset_order">Сбросить значения по умолчанию</button>
+                </div>
+
+                <div class="row m-1">
+                    <button type="button" class="btn btn-light btn-lg" onclick="window.admin_form.close()">Закрыть Окно</button>
+                </div>
+
+            </form>
+        </dialog>
     </p>
 
     <div class="wrapper">
@@ -39,6 +94,7 @@
             </div>
         </div>
     </div>
-    
+
 </body>
+
 </html>
