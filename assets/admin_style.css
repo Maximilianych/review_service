@@ -2,4 +2,12 @@ h1, p{
     text-align: center;
 }
 
+.have-review-0 {
+    background-color: lightcoral;
+}
+
+.have-review-1 {
+    background-color:darkseagreen;
+}
+
 

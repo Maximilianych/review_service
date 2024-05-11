@@ -18,3 +18,11 @@ table {
 .table-cont {
     align-self: start;
 }
+
+.have-review-0 {
+    background-color: lightcoral;
+}
+
+.have-review-1 {
+    background-color:darkseagreen;
+}

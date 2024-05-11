@@ -1,7 +1,7 @@
 use tera::Context;
 use tokio_postgres::Client;
 
-use crate::NewOrderForm;
+use crate::{user, NewOrderForm};
 
 pub struct DoThings {}
 impl DoThings {
@@ -17,25 +17,27 @@ impl DoThings {
                 <th></th>
             </tr>",
         );
-        for row in client.query("SELECT CAST(request_id as varchar(10)), book_name, person_name, reviewer_name, faculty_name FROM request
+        for row in client.query("SELECT CAST(request_id as varchar(10)), book_name, person_name, reviewer_name, faculty_name, CAST(have_review as varchar(10)) FROM request
                                                 INNER JOIN person
                                                 ON request.author_id = person.person_id
                                                 INNER JOIN reviewer
                                                 ON request.reviewer_id = reviewer.reviewer_id
                                                 INNER JOIN faculty
-                                                ON request.faculty_id = faculty.faculty_id", &[])
+                                                ON request.faculty_id = faculty.faculty_id
+                                                ORDER BY CAST(request_id as integer)", &[])
                                                 .await
                                                 .unwrap() {
-            let tr = format!("<tr>
+            let tr = format!("<tr class='have-review-{}'>
                                         <td>{}</td>
                                         <td>{}</td>
                                         <td>{}</td>
                                         <td>{}</td>
                                         <td>{}</td>
                                         <td>
-                                            <a hx-delete='/delete_order/{}' hx-target='closest tr' hx-swap='outerHTML' class='btn-outline-dark btn'><i class='bi-trash3-fill'></i></a>
+                                            <button hx-delete='/delete_order/{}' hx-target='closest tr' hx-swap='outerHTML' class='btn-outline-dark btn'><i class='bi-trash3-fill'></i></button>
+                                            <button hx-post='/switch_have_review/{}' hx-swap='none' class='btn-outline-dark btn'><i class='bi-arrow-left-right'></i></button>
                                         </td>
-                                    </tr>", row.get::<usize, &str>(0), row.get::<usize, &str>(1), row.get::<usize, &str>(2), row.get::<usize, &str>(3), row.get::<usize, &str>(4), row.get::<usize, &str>(0));
+                                    </tr>", row.get::<usize, &str>(5), row.get::<usize, &str>(0), row.get::<usize, &str>(1), row.get::<usize, &str>(2), row.get::<usize, &str>(3), row.get::<usize, &str>(4), row.get::<usize, &str>(0), row.get::<usize, &str>(0));
             table.push_str(&tr)
         }
         table.push_str("</table>");
@@ -53,7 +55,7 @@ impl DoThings {
             </tr>",
         );
 
-        for row in client.query("SELECT CAST(request_id as varchar(10)), book_name, reviewer_name, faculty_name FROM request
+        for row in client.query("SELECT CAST(request_id as varchar(10)), book_name, reviewer_name, faculty_name, CAST(have_review as varchar(10)) FROM request
                                                 INNER JOIN reviewer
                                                 ON request.reviewer_id = reviewer.reviewer_id
                                                 INNER JOIN faculty
@@ -61,14 +63,14 @@ impl DoThings {
                                                 WHERE request.author_id = $1", &[&(id as i32)])
                                                 .await
                                                 .unwrap() {
-            let tr = format!("<tr>
+            let tr = format!("<tr class='have-review-{}'>
                                         <td>{}</td>
                                         <td>{}</td>
                                         <td>{}</td>
                                         <td>
                                             <a hx-delete='/delete_order/{}' hx-target='closest tr' hx-swap='outerHTML' class='btn-outline-dark btn'><i class='bi-trash3-fill'></i></a>
                                         </td>
-                                    </tr>", row.get::<usize, &str>(1), row.get::<usize, &str>(2), row.get::<usize, &str>(3), row.get::<usize, &str>(0));
+                                    </tr>", row.get::<usize, &str>(4), row.get::<usize, &str>(1), row.get::<usize, &str>(2), row.get::<usize, &str>(3), row.get::<usize, &str>(0));
             table.push_str(&tr)
         }
         table.push_str("</table>");

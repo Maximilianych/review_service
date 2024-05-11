@@ -1,6 +1,7 @@
 use actix_files as fs;
-use actix_web::{dev::Server, get, post, delete, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{delete, dev::Server, get, post, web::{self, Redirect}, App, HttpResponse, HttpServer, Responder};
 use lazy_static::lazy_static;
+use postgres::Statement;
 use serde::Deserialize;
 use tera::Tera;
 use tokio;
@@ -11,9 +12,12 @@ mod do_things;
 use chain::Chain;
 use do_things::DoThings;
 
+use std::{env, fmt::format};
+
 //-------------Singleton--------------
 lazy_static! {
     pub static ref TEMPLATES: Tera = {
+        //
         let source = "templates/**/*";
         let tera = Tera::new(source).unwrap();
         tera
@@ -202,7 +206,28 @@ async fn delete_order(id: web::Path<(u32,)>) -> impl Responder {
     else {
         HttpResponse::BadRequest()
     }
+}
 
+#[post("/switch_have_review/{id}")]
+async fn switch_have_review(id: web::Path<(u32,)>) -> impl Responder {
+    println!("Меняю статус заказа");
+    let (client, connection) =
+        tokio_postgres::connect("postgresql://rust:rust@localhost:5432/Service", NoTls)
+            .await
+            .unwrap();
+    tokio::spawn(async move {
+        if let Err(e) = connection.await {
+            eprintln!("connection error: {}", e);
+        }
+    });
+    let id = id.into_inner().0;
+
+    let statement = format!("UPDATE request
+                                    SET have_review = (SELECT have_review # 1 FROM request WHERE request_id = {id}) 
+                                    WHERE request_id = {id}");
+    client.execute(&statement, &[]).await.unwrap();
+    println!("{}", statement);
+    HttpResponse::Ok().append_header(("HX-redirect", "/admin")).finish()
 }
 
 #[get("/admin")]
@@ -227,7 +252,6 @@ async fn admin() -> impl Responder {
         .body(page_content)
 }
 
-
 struct RunServer {}
 impl RunServer {
     fn run() -> Server {
@@ -242,6 +266,7 @@ impl RunServer {
                 .service(new_order_user)
                 .service(new_order_admin)
                 .service(delete_order)
+                .service(switch_have_review)
                 .service(fs::Files::new("/assets", "./assets").show_files_listing())
         })
         .bind(("127.0.0.1", 8080))
@@ -252,7 +277,7 @@ impl RunServer {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    env::set_var("RUST_BACKTRACE", "0");
+    env::set_var("RUST_BACKTRACE", "1");
 
     RunServer::run().await?;
 
