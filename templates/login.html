@@ -12,41 +12,28 @@
 
 <body>
     <div class="header col-12">
-        <!-- "Верхняя панель" окна приложения -->
         Сервис подбора экспертов для рецензирования
     </div>
 
     <div class="row base">
-        <!-- "Ряд" "основной части" окна приложения -->
-
         <div class="col-2 left">
         </div>
-        <!-- 3/12 слева "основной части" -->
-
         <div class="col-8 middle">
-            <!-- 6/12 посередине "основной части" -->
-            <form hx-post="/login" hx-target="#username" >
+            <form hx-post="/login" hx-target="#username">
                 <div class="row email">
-                    <!-- 0й "Ряд" "основной части" -->
                     <label for="username" class="col-4 col-form-label" id="username">Электронная почта/логин/номер телефона</label>
                     <div class="col-8">
-                        <input type="text" class="form-control" name="username" placeholder="email@example.com" required minlength="1"/>
+                        <input type="text" class="form-control" name="username" placeholder="email@example.com" required minlength="1" />
                     </div>
                 </div>
-                <!-- 0й "Ряд" "основной части" -->
-
                 <div class="row pass">
-                    <!-- 1й "Ряд" "основной части" -->
                     <label for="password" class="col-4 col-form-label">Пароль</label>
                     <div class="col-8">
-                        <input type="password" class="form-control" name="password" id="label_password"
-                            placeholder="Введите пароль..." required minlength="1"/>
+                        <input type="password" class="form-control" name="password" id="label_password" placeholder="Введите пароль..." required
+                            minlength="1" />
                     </div>
                 </div>
-                <!-- 1й "Ряд" "основной части" -->
-
                 <div class="row">
-                    <!-- 2й "Ряд" "основной части" -->
                     <div class="col-12">
                         <button class="btn btn-primary" id="button_login">Войти по
                             логин-паролю</button>
@@ -54,20 +41,12 @@
                 </div>
             </form>
         </div>
-        <!-- 6/12 посередине "основной части" -->
-
         <div class="col-2 right">
-            <!-- 3/12 справа "основной части" -->
         </div>
-        <!-- 3/12 справа "основной части" -->
     </div>
-    <!-- "Ряд" "основной части" окна приложения -->
-
     <div class="footer col-12" id="copyright">
-        <!-- "Нижняя часть" окна -->
         Модуль авторизации сервиса.<br />
     </div>
-    <!-- "Нижняя часть" окна -->
 </body>
 
 </html>

@@ -238,7 +238,6 @@ async fn admin() -> impl Responder {
     let mut context = tera::Context::new();
 
     DoThings::do_admin_table(&client, &mut context).await;
-
     let page_content = TEMPLATES.render("admin.html", &context).unwrap();
     HttpResponse::Ok()
         .append_header(("HX-redirect", "/admin"))
