@@ -1,7 +1,7 @@
 use tera::Context;
 use tokio_postgres::Client;
 
-use crate::{user, NewOrderForm};
+use crate::NewOrderForm;
 
 pub struct DoThings {}
 impl DoThings {
@@ -100,8 +100,8 @@ impl DoThings {
     pub async fn create_order(order_form: &NewOrderForm, client: &Client) -> bool {
         match client
             .execute(
-                "INSERT INTO request(book_name, author_id, reviewer_id, faculty_id)
-                                VALUES ($1, $2, $3, $4);",
+                "INSERT INTO request(book_name, author_id, reviewer_id, faculty_id, have_review)
+                                        VALUES ($1, $2, $3, $4, 0);",
                 &[
                     &order_form.book_name,
                     &order_form.user_id,

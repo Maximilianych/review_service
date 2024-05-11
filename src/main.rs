@@ -1,7 +1,6 @@
 use actix_files as fs;
-use actix_web::{delete, dev::Server, get, post, web::{self, Redirect}, App, HttpResponse, HttpServer, Responder};
+use actix_web::{dev::Server, get, post, delete, web, App, HttpResponse, HttpServer, Responder};
 use lazy_static::lazy_static;
-use postgres::Statement;
 use serde::Deserialize;
 use tera::Tera;
 use tokio;
@@ -12,12 +11,11 @@ mod do_things;
 use chain::Chain;
 use do_things::DoThings;
 
-use std::{env, fmt::format};
+use std::env;
 
 //-------------Singleton--------------
-lazy_static! {
+lazy_static! { //Этот код вызывается один раз за всё выполнение программы при первом обращении к TEMPLATES или его методам
     pub static ref TEMPLATES: Tera = {
-        //
         let source = "templates/**/*";
         let tera = Tera::new(source).unwrap();
         tera
@@ -152,11 +150,10 @@ async fn new_order_user(order_form: web::Form<NewOrderForm>) -> impl Responder {
     let order_form = order_form.into_inner();
 
     if DoThings::create_order(&order_form, &client).await {
-        let table = DoThings::do_user_table(order_form.user_id as u32, &client).await;
-        return HttpResponse::Ok().body(table);
+        return HttpResponse::Ok().append_header(("HX-redirect", format!("/user/{}", order_form.user_id))).finish();
     }
     else {
-        return HttpResponse::Ok().body("Что-то не так");
+        return HttpResponse::BadRequest().finish();
     }
 }
 
@@ -176,13 +173,10 @@ async fn new_order_admin(order_form: web::Form<NewOrderForm>) -> impl Responder 
     let order_form = order_form.into_inner();
 
     if DoThings::create_order(&order_form, &client).await {
-        let mut context = tera::Context::new();
-        DoThings::do_admin_table(&client, &mut context).await;
-        let table = TEMPLATES.render("admin_table.html", &context).unwrap();
-        return HttpResponse::Ok().body(table);
+        return HttpResponse::Ok().append_header(("HX-redirect", "/admin")).finish();
     }
     else {
-        return HttpResponse::Ok().body("Что-то не так");
+        return HttpResponse::BadRequest().finish();
     }
 }
 
@@ -226,7 +220,6 @@ async fn switch_have_review(id: web::Path<(u32,)>) -> impl Responder {
                                     SET have_review = (SELECT have_review # 1 FROM request WHERE request_id = {id}) 
                                     WHERE request_id = {id}");
     client.execute(&statement, &[]).await.unwrap();
-    println!("{}", statement);
     HttpResponse::Ok().append_header(("HX-redirect", "/admin")).finish()
 }
 
