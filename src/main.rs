@@ -14,7 +14,7 @@ use do_things::DoThings;
 use std::env;
 
 //-------------Singleton--------------
-lazy_static! { //Этот код вызывается один раз за всё выполнение программы при первом обращении к TEMPLATES или его методам
+lazy_static! {
     pub static ref TEMPLATES: Tera = {
         let source = "templates/**/*";
         let tera = Tera::new(source).unwrap();
