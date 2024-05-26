@@ -13,5 +13,9 @@ To compile from the project folder write
 ```
 cargo run
 ```
-Go to `localhost:8080` and do not look further, if you still need eyesight <br>
+or
+```
+cargo build
+```
 After the first compilation, the executable can be found at the path `target\debug\`, if compiled with the `--release` attribute, the path will be `target\release\`
+Go to `localhost:8080` and do not look further, if you still need eyesight <br>
