@@ -1,4 +1,4 @@
-## About the project
+## About a project
 This thing is not to be touched under any circumstances <br>
 It was made under duress for a not-so-good man <br>
 It will only lie here so that sometime later, maybe (or maybe not), I will come back here to peek at a piece of something or scold myself
